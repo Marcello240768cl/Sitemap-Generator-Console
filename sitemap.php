@@ -38,16 +38,17 @@ $n=1;
 $html=file_get_contents($url);
 #Initialing output string of dump_url function
 $str_dump="";
+#recoursive function with 2 base parameter  conditions
 function dump_url(&$urls,$n,$str_dump){ 
-
+if($n==0){
 $html=file_get_contents($urls[0]);
 $dom = new DOMDocument();
 
 $html=file_get_contents($urls[0]);
 
-@$dom->loadHTML($html); 
+@$dom->loadHTML($html); }
    
-if($n==1){
+else if($n==1){
 foreach($dom->getElementsByTagName('a') as $link) {
 
       $urls[$n]=$link->getAttribute('href');
