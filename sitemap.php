@@ -1,7 +1,8 @@
 <?php
 
 
-#function get_links return all the links of processed url
+# copied from Documento https://stackoverflow.com/questions/52257829/getting-link-tag-via-domdocument
+#Is the function that uses Dom Objects to return links of an url or of a page 
 function get_links($link)
     {
 $ret = array();
