@@ -1,8 +1,11 @@
 <?php
 
-
-# copied from Documento https://stackoverflow.com/questions/52257829/getting-link-tag-via-domdocument
-#Is the function that uses Dom Objects to return links of an url or of a page 
+# The function get_links($link) that return array of links anchor of Dom object of html page of url link
+# was copied from Documento https://stackoverflow.com/questions/52257829/getting-link-tag-via-domdocument
+#While the function get_urls_from($url) that uses Dom Objects to return the list links of an url of site web
+#and help to get sitemap xml file with the code of this file :sitemap.php
+# is entirely written by the author :Piermarcello Piazza 
+#The code is used by https://trenetcl.altervista.org to download sitemap.xml on the fly
 function get_links($link)
     {
 $ret = array();
@@ -78,7 +81,7 @@ return $arr_link;
 
 
 
-#function of output printing of file xml
+#function of output printing of file sitemap.xml
     function urlElement($url) {
         $aptr= '<url>'.PHP_EOL. 
          '<loc>'.$url.'</loc>'. PHP_EOL. 
