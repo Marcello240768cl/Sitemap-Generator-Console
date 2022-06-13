@@ -106,7 +106,7 @@ return $aptr;
 
 
 #url site from post form of file input.html
-$start_url =$argv[1];//$_REQUEST['url_site'];
+$start_url =$_REQUEST['url_site'];
  $newurl='';
 $arr_links=get_urls_from($start_url);
 var_dump($arr_links);
