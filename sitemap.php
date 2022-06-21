@@ -1,16 +1,11 @@
 <?php
 
-# The function get_links($link) that return array of links anchor of Dom object of html page of url link
-# was copied from Documento https://stackoverflow.com/questions/52257829/getting-link-tag-via-domdocument
-#While the function get_urls_from($url) that uses Dom Objects to return the list links of an url of site web
-#and help to get sitemap xml file with the code of this file :sitemap.php
-# is entirely written by the author :Piermarcello Piazza 
-#The code is used by https://trenetcl.altervista.org to download sitemap.xml on the fly
-require 'relpath.php';
-function get_links($link)
+
+
+function get_links($link,$url)
     {
 $ret = array();
-    
+      if((parse_url($link, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
         $dom = new DOMDocument();
         $html=file_get_contents($link);
         if($html!=''){
@@ -21,8 +16,9 @@ $ret = array();
         foreach ($links as $tag){
             $ret[$tag->getAttribute('href')] =$tag->getAttribute('href');
         }
-         }
-      else return;
+         
+      }
+    }
      
         return $ret;
     }
@@ -31,54 +27,58 @@ $ret = array();
 
 
 function get_urls_from($url)
-{#begin function
+
+{
+global $host,$base,$scheme,$path;
 $link=array();
 $arr_link=array();
-#processes the prefix,host,and validity of ip address of generic url
-$scheme=parse_url($url, PHP_URL_SCHEME);
-$host=parse_url($url, PHP_URL_HOST);
-$ip = gethostbyname($host);
-#begin if clausola of url (if an url can be taken in consideration to push into quee stack to recursively function get_urls_from($url)
-if((($scheme=='http')||($scheme=='https')||($scheme=='ftp')||(($scheme=='mailto'))&&(filter_var($ip, FILTER_VALIDATE_IP)==true)))
-{
-$link=get_links($url);#call the function get_links to return array containing the processed links of an url
+
+
+#call the function get_links to return array containing the processed links of an url
+$link=get_links($url,$url);
 $get_url='';
 #push into quee stack
 
-array_push($arr_link,$url);
+array_push($link,$url);
+$arr_link=$link;
    foreach($link as $url_)
-   {
+
+  {
 
 $schemeurl_=parse_url($url_, PHP_URL_SCHEME);
 $hosturl_=parse_url($url_, PHP_URL_HOST);
-//$ipurl_ = gethostbyname($hosturl_);
+$ipurl_ = gethostbyname($hosturl_);
 $pathurl_=parse_url($url_, PHP_URL_PATH);
 $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
-     if($pathurl_!='')//if path of link child url_ exists
-    {
-     /*#but is empty url of the same page 
-     if($schemeurl_=='') $get_url=$scheme.'://';
-     if($hosturl_!='') $get_url=$get_url.$hosturl_;
-     if($pathurl_!='')  $get_url=$get_url.$host.'/'.$url_;*/
-     #if the link  stack insert into stack not match any other link 
-    // if(!in_array($url_,$arr_link))
-$get_url=rel2abs($url_, $url); 
-       array_push($arr_link,$get_url);
 
-////********Apoteosi apocalittica************//////
+$ipurl_ = gethostbyname($url_);
 
-     }//end if path of link child url_
-#else pop the last link and run recursively the function get_urls_from($url)
-else 
-     {
-     
-      $newurl=array_pop($arr_link);
-return get_urls_from($newurl);
-     }
-   }
- 
+
+
+
+if($schemeurl_=='') $schemeurl_=$scheme;
+if($pathurl_=='') $pathurl_='/';
+
+if($hosturl_=='') $hosturl_=$host;
+ $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
+
+ if(!in_array($newurl,$link)){
+       array_push($link,$newurl);
+$link=get_links($newurl,$url);
+$arr_link=array_merge($arr_link,$link);
+
+
 }
+
+
+  
+
+   }
+
+
+
+
 
 
 
@@ -88,7 +88,7 @@ return $arr_link;
 }
 
 
-//////************fine apocalisse*************/////////
+
 # array $urls containing link  of pages
     $arr_links = array( );
 
@@ -108,13 +108,22 @@ return $aptr;
 #url site from post form of file input.html
 $start_url =$_REQUEST['url_site'];
  $newurl='';
+$scheme=parse_url($start_url, PHP_URL_SCHEME);
+$path=parse_url($start_url, PHP_URL_PATH);
+$host=parse_url($start_url, PHP_URL_HOST);
+$query=parse_url($start_url, PHP_URL_QUERY);
+$ip = gethostbyname($host);
+#begin if clausola of url (if an url can be taken in consideration to push into quee stack to recursively function get_urls_from($url)
+
+if((filter_var($ip, FILTER_VALIDATE_IP)==true))
+{
 $arr_links=get_urls_from($start_url);
-var_dump($arr_links);
+//var_dump($arr_links);
 $str_finale="";$str_dump="";//Variable string of output of function  dump_url
 
 foreach($arr_links as $link) {
 
-    //  $urls[$n]=$link->getAttribute('href');
+   
 $str_dump.=urlElement($link);  
 
 }
@@ -122,12 +131,12 @@ $str_dump.=urlElement($link);
 
 
 $str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL; 
-  $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
+ $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
 $str_dump=$str_finale.$str_dump;
-$str_dump =$str_dump.'</urlset>';echo $str_dump;
+$str_dump =$str_dump.'</urlset>';
 #put html content into $url file xml from folder 
-unlink("sitemap.xml");
-$fp=file_put_contents("sitemap.xml",$str_dump);
+//unlink("sitemap.xml");
+$fp=file_put_contents("sitemap.xml",$str_dump);}
 
 
 
