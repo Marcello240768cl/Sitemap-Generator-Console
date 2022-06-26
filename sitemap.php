@@ -5,8 +5,7 @@
 function get_links($link,$url)
     {
 $ret = array();
-      if((parse_url($link, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
-        $dom = new DOMDocument();
+         $dom = new DOMDocument();
         $html=file_get_contents($link);
         if($html!=''){
         #Use Dom Object
@@ -18,7 +17,7 @@ $ret = array();
         }
          
       }
-    }
+    
      
         return $ret;
     }
@@ -47,7 +46,7 @@ $arr_link=$link;
 
 $schemeurl_=parse_url($url_, PHP_URL_SCHEME);
 $hosturl_=parse_url($url_, PHP_URL_HOST);
-$ipurl_ = gethostbyname($hosturl_);
+//$ipurl_ = gethostbyname($hosturl_);
 $pathurl_=parse_url($url_, PHP_URL_PATH);
 $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
@@ -56,7 +55,7 @@ $ipurl_ = gethostbyname($url_);
 
 
 
-
+if((parse_url($url_, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
 if($schemeurl_=='') $schemeurl_=$scheme;
 if($pathurl_=='') $pathurl_='/';
 
@@ -65,9 +64,9 @@ if($hosturl_=='') $hosturl_=$host;
 
  if(!in_array($newurl,$link)){
        array_push($link,$newurl);
-$link=get_links($newurl,$url);
+$link=get_links($link,$newurl);
 $arr_link=array_merge($arr_link,$link);
-
+}
 
 }
 
@@ -134,8 +133,8 @@ $str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
  $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
 $str_dump=$str_finale.$str_dump;
 $str_dump =$str_dump.'</urlset>';
-#put html content into $url file xml from folder 
-//unlink("sitemap.xml");
+#put $str_dump content into sitemap file xml from the current folder 
+
 $fp=file_put_contents("sitemap.xml",$str_dump);}
 
 
@@ -152,7 +151,7 @@ readfile("sitemap.xml");
         
          
 #Destroy file after downloading it
-//unlink("sitemap.xml");
+
 
 #Exit page 
 exit();
