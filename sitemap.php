@@ -5,7 +5,8 @@
 function get_links($link,$url)
     {
 $ret = array();
-         $dom = new DOMDocument();
+      if((parse_url($link, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
+        $dom = new DOMDocument();
         $html=file_get_contents($link);
         if($html!=''){
         #Use Dom Object
@@ -17,7 +18,7 @@ $ret = array();
         }
          
       }
-    
+    }
      
         return $ret;
     }
@@ -46,7 +47,7 @@ $arr_link=$link;
 
 $schemeurl_=parse_url($url_, PHP_URL_SCHEME);
 $hosturl_=parse_url($url_, PHP_URL_HOST);
-//$ipurl_ = gethostbyname($hosturl_);
+$ipurl_ = gethostbyname($hosturl_);
 $pathurl_=parse_url($url_, PHP_URL_PATH);
 $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
@@ -55,18 +56,18 @@ $ipurl_ = gethostbyname($url_);
 
 
 
-if((parse_url($url_, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
-if($schemeurl_=='') $schemeurl_=$scheme;
-if($pathurl_=='') $pathurl_='/';
 
-if($hosturl_=='') $hosturl_=$host;
+if($schemeurl_=='') $schemeurl_=$scheme;
+if((($path!='')&&($pathurl_==''))||(($path=='')&&($pathurl_==''))) $pathurl_='';
+
+
  $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
 
  if(!in_array($newurl,$link)){
        array_push($link,$newurl);
-$link=get_links($link,$newurl);
+$link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
-}
+
 
 }
 
@@ -105,8 +106,8 @@ return $aptr;
 
 
 #url site from post form of file input.html
-$start_url =$_REQUEST['url_site'];
- $newurl='';
+$start_url =$argv[1];
+$newurl='';
 $scheme=parse_url($start_url, PHP_URL_SCHEME);
 $path=parse_url($start_url, PHP_URL_PATH);
 $host=parse_url($start_url, PHP_URL_HOST);
@@ -133,28 +134,13 @@ $str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
  $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
 $str_dump=$str_finale.$str_dump;
 $str_dump =$str_dump.'</urlset>';
-#put $str_dump content into sitemap file xml from the current folder 
+#put html content into $url file xml from folder 
 
 $fp=file_put_contents("sitemap.xml",$str_dump);}
 
 
 
-header("Content-Type: application/force-download; name=sitemap.xml");
-header("Content-type: text/xml"); 
-header("Content-Transfer-Encoding: binary");
-header("Content-Disposition: attachment; filename=sitemap.xml");
-header("Expires: 0");
-header("Cache-Control: no-cache, must-revalidate");
-header("Pragma: no-cache");
-readfile("sitemap.xml");
 
-        
-         
-#Destroy file after downloading it
-
-
-#Exit page 
-exit();
 
 ?>
 
