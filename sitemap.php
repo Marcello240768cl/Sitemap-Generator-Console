@@ -29,7 +29,7 @@ $ret = array();
 function get_urls_from($url)
 
 {
-global $host,$base,$scheme,$path;
+global $host,$base,$scheme,$path;$newurl;
 $link=array();
 $arr_link=array();
 
@@ -57,17 +57,23 @@ $ipurl_ = gethostbyname($url_);
 
 
 
-if($schemeurl_=='') $schemeurl_=$scheme;
-if((($path!='')&&($pathurl_==''))||(($path=='')&&($pathurl_==''))) $pathurl_='';
+//if($schemeurl_=='') $schemeurl_=$scheme;
+//if((($path!='')&&($pathurl_==''))||(($path=='')&&($pathurl_==''))) $pathurl_='';
 
-
- $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
-
- if(!in_array($newurl,$link)){
+if($hosturl_==''){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
+// get_urls_from($newurl);
+}}
 
+// $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
+
+ if(!in_array($url_,$link)){
+       array_push($link,$url_);
+$link=get_links($url_,$url);
+$arr_link=array_merge($arr_link,$link);
+//get_urls_from($url_);
 
 }
 
@@ -133,7 +139,7 @@ $str_dump.=urlElement($link);
 $str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL; 
  $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
 $str_dump=$str_finale.$str_dump;
-$str_dump =$str_dump.'</urlset>';
+$str_dump =$str_dump.'</urlset>';echo $str_dump ;
 #put html content into $url file xml from folder 
 
 $fp=file_put_contents("sitemap.xml",$str_dump);}
