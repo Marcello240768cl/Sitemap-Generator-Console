@@ -1,13 +1,15 @@
 <?php
 
 
-
+#Funzione che restituisce i link della pagina dell' url di partenza
+#input:url della pagina di partenza e generico $link delle ancore dei links
+# restituisce l' array di links 
 function get_links($link,$url)
     {
 $ret = array();
       if((parse_url($link, PHP_URL_HOST))==(parse_url($url, PHP_URL_HOST))){
         $dom = new DOMDocument();
-        $html=file_get_contents($link);
+        $html=@file_get_contents($link);
         if($html!=''){
         #Use Dom Object
         @$dom->loadHTML($html);
@@ -18,26 +20,28 @@ $ret = array();
         }
          
       }
-    }
+    } 
+
+
      
         return $ret;
     }
 
 
-
+#Funzione che restituisce i link della pagina dell' url di partenza
+#input:url della pagina di partenza e generico $link delle ancore dei links
+# restituisce l' array di links per ogni pagina associata al link sempre in profondita sino a quando trova l' eccezione di get_links
 
 function get_urls_from($url)
 
 {
-global $host,$base,$scheme,$path;$newurl;
-$link=array();
-$arr_link=array();
+global $host,$base,$scheme,$path;$newurl;  // vriabili globali che vengono richiamate nel programma e passate per valore
+$link=array();//definizione dell' array contenente i link
+$arr_link=array();//definizione dell' array contenente i link dei link
 
 
-#call the function get_links to return array containing the processed links of an url
 $link=get_links($url,$url);
 $get_url='';
-#push into quee stack
 
 array_push($link,$url);
 $arr_link=$link;
@@ -57,15 +61,24 @@ $ipurl_ = gethostbyname($url_);
 
 
 
-//if($schemeurl_=='') $schemeurl_=$scheme;
-//if((($path!='')&&($pathurl_==''))||(($path=='')&&($pathurl_==''))) $pathurl_='';
 
-if($hosturl_==''){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;if(!in_array($newurl,$link)){
+#Se il generico link ha come host di riferimento lo stesso host dell' url di partenza, va sempre più  in profondita altrimenti si ferma
+if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$path.'?'.$queryurl_;if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
 // get_urls_from($newurl);
 }}
+else if(($hosturl_=='')&&($pathurl_!='') )
+{$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;if(!in_array($newurl,$link)){
+       array_push($link,$newurl);
+$link=get_links($newurl,$url);
+$arr_link=array_merge($arr_link,$link);
+// get_urls_from($newurl);
+}}
+
+
+
 
 // $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
 
