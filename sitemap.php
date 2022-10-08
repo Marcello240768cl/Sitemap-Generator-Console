@@ -30,12 +30,13 @@ $ret = array();
 
 #Funzione che restituisce i link della pagina dell' url di partenza
 #input:url della pagina di partenza e generico $link delle ancore dei links
-# restituisce l' array di links per ogni pagina associata al link sempre in profondita sino a quando trova l' eccezione di get_links
+# restituisce l' array di links per ogni pagina associata al link sempre in profondita sino a quando trova l' eccezione di get_links, cioe'
+# un link con un nome host diverso da quello di partenza
 
 function get_urls_from($url)
 
 {
-global $host,$base,$scheme,$path;$newurl;  // vriabili globali che vengono richiamate nel programma e passate per valore
+global $host,$base,$scheme,$path;$newurl;  // vriabili globali che vengono richiamate nel programma 
 $link=array();//definizione dell' array contenente i link
 $arr_link=array();//definizione dell' array contenente i link dei link
 
@@ -51,44 +52,47 @@ $arr_link=$link;
 
 $schemeurl_=parse_url($url_, PHP_URL_SCHEME);
 $hosturl_=parse_url($url_, PHP_URL_HOST);
-$ipurl_ = gethostbyname($hosturl_);
+//$ipurl_ = gethostbyname($hosturl_);
 $pathurl_=parse_url($url_, PHP_URL_PATH);
 $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
 
-$ipurl_ = gethostbyname($url_);
+//$ipurl_ = gethostbyname($url_);
 
 
 
 
 
 #Se il generico link ha come host di riferimento lo stesso host dell' url di partenza, va sempre più  in profondita altrimenti si ferma
-if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$path.'?'.$queryurl_;if(!in_array($newurl,$link)){
+if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$path.'?'.$queryurl_;
+if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
-// get_urls_from($newurl);
-}}
+}
+else  get_urls_from($url_);
+}
 else if(($hosturl_=='')&&($pathurl_!='') )
-{$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;if(!in_array($newurl,$link)){
+{$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;
+if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
-// get_urls_from($newurl);
-}}
+
+}
+else  get_urls_from($url_);
+}
 
 
 
 
-// $newurl=$schemeurl_.'://'.$hosturl_.'/'.$pathurl_.'?'.$queryurl_;
 
  if(!in_array($url_,$link)){
        array_push($link,$url_);
 $link=get_links($url_,$url);
 $arr_link=array_merge($arr_link,$link);
-//get_urls_from($url_);
-
 }
+else  get_urls_from($url_);
 
 
   
@@ -108,7 +112,7 @@ return $arr_link;
 
 
 
-# array $urls containing link  of pages
+# array $urls contenente link  delle pagine
     $arr_links = array( );
 
 
@@ -132,7 +136,6 @@ $path=parse_url($start_url, PHP_URL_PATH);
 $host=parse_url($start_url, PHP_URL_HOST);
 $query=parse_url($start_url, PHP_URL_QUERY);
 $ip = gethostbyname($host);
-#begin if clausola of url (if an url can be taken in consideration to push into quee stack to recursively function get_urls_from($url)
 
 if((filter_var($ip, FILTER_VALIDATE_IP)==true))
 {
@@ -150,12 +153,13 @@ $str_dump.=urlElement($link);
 
 
 $str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL; 
- $str_finale= $str_finale.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL ; 
+ $str_finale= $str_finale.'<urlset>'.PHP_EOL ; 
 $str_dump=$str_finale.$str_dump;
 $str_dump =$str_dump.'</urlset>';echo $str_dump ;
 #put html content into $url file xml from folder 
 
-$fp=file_put_contents("sitemap.xml",$str_dump);}
+$fp=file_put_contents("sitemap.xml",$str_dump);
+}
 
 
 
