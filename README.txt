@@ -1,1 +1,0 @@
-You can download the url file sitemap directly into Downloads folder
