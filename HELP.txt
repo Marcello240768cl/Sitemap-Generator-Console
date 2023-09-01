@@ -1,0 +1,2 @@
+REALIZED IN PHP LANGUAGE BY PIERMARCELLO PIAZZA
+usage: php sitemap.php <argv>[ie:]=> (http://[https://])url_of_site_name
