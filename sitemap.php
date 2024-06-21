@@ -128,7 +128,7 @@ foreach($new_Arr as $key=>$fnew_url)
 {
 #if in the link is missed the suffix http(or https)://hostname/pathhostname/ in the link
 # this function complete the full url
-if((parse_url($fnew_url, PHP_URL_HOST)=="")&&(parse_url($start_url, PHP_URL_HOST)!=parse_url($fnew_url, PHP_URL_HOST)))
+if(((parse_url($fnew_url, PHP_URL_HOST)=="")||(parse_url($fnew_url, PHP_URL_HOST)=="#"))&&(parse_url($start_url, PHP_URL_HOST)!=parse_url($fnew_url, PHP_URL_HOST)))
 {
 #modify $fnew_url
 
