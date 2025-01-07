@@ -1,5 +1,33 @@
 <?php
+ini_set('memory_limit','-1');
+#Copyright (C) <2023>  <Piermarcello Piazza>
+#Funzione che restituisce i link della pagina dell' url di partenza sia https che http
+#input:url della pagina di partenza e generico $link delle ancore dei links
+# restituisce la mappa  di links del sito avente quell' url
 
+function getOriginalURL($url) {//funzione che restituisce il folder di redirect se c'è un redirect altrimenti mantiene invariato url di origine
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HEADER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+    $result = @curl_exec($ch);
+    $httpStatus = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    // if it's not a redirection (3XX), move along
+    if ($httpStatus < 300 || $httpStatus >= 400)
+        return $url;
+
+    // look for a location: header to find the target URL
+    if(@preg_match('/location: (.*)/i', $result, $r)) {
+        $location = trim($r[1]);
+
+
+        return @$location;
+    }
+    
+}
 #Copyright (C) <2023>  <Piermarcello Piazza>
 #Funzione che restituisce i link della pagina dell' url di partenza sia https che http
 #input:url della pagina di partenza e generico $link delle ancore dei links
@@ -54,6 +82,7 @@ $get_url='';
 
 array_push($link,$url);
 $arr_link=$link;
+#Per ogni link dello stack array
    foreach($link as $url_)
 
   {
@@ -71,8 +100,9 @@ $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
 
 
-#Se il generico link ha come host di riferimento lo stesso host dell' url di partenza, va sempre più  in profondita altrimenti si ferma
+#Se il generico link ha come host di riferimento lo stesso host dell' url di partenza
 if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$path.'?'.$queryurl_;
+# e se e' diverso da quelli gia' esaminati ,va sempre più  in profondita nello stack array altrimenti si ferma
 if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
@@ -80,8 +110,11 @@ $arr_link=array_merge($arr_link,$link);
 }
 //else  get_urls_from($newurl);
 }
+#altrimenti se il link non ha un host uguale a quello dell' url di base(start_url)'
 else if(($hosturl_=='')&&($pathurl_!='') )
-{$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;
+{
+//aggiungiamo il nome host dell' url di base e reiteriamo come sopra'
+$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;
 if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
@@ -94,7 +127,7 @@ $arr_link=array_merge($arr_link,$link);
 
 
 
-
+#Stessa operazione per tutti gli altri link dell
  if(!in_array($url_,$link)){
        array_push($link,$url_);
 $link=get_links($url_,$url);
@@ -169,17 +202,28 @@ return $aptr;
 
 
 
-$start_url =$argv[1];
-$newurl='';
+$start_url =$_REQUEST['site_http_or_https'];
 $scheme=parse_url($start_url, PHP_URL_SCHEME);
 $path=parse_url($start_url, PHP_URL_PATH);
 $host=parse_url($start_url, PHP_URL_HOST);
 $query=parse_url($start_url, PHP_URL_QUERY);
 $ip = gethostbyname($host);
+$urlp=getOriginalURL($_REQUEST['site_http_or_https']);
+$newpath=parse_url($urlp, PHP_URL_PATH);
+$newstr= str_replace('index.php','',$newpath);
 
+$start_url =$scheme.'://'.$host.'/'.$newstr;
 
 $arr_links=get_urls_from($start_url);
 $final_array=get_final_urls($arr_links);
+foreach($final_array as $key=>$f_url)
+{
+  if((parse_url($f_url, PHP_URL_PATH)=="#")||(parse_url($f_url, PHP_URL_QUERY)=="#"))
+ #delete $fnew_url;
+    #delete it if the linkname of map is different from hostname.
+  unset( $final_array[$key]);
+
+}
 //var_dump($arr_links);
 $str_finale="";$str_dump="";//Variable string of output of function  dump_url
 
@@ -192,18 +236,32 @@ $str_dump.=urlElement($link);
 
 
 
-$str_finale= '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL; 
- $str_finale= $str_finale.'<urlset>'.PHP_EOL ; 
-$str_dump=$str_finale.$str_dump;
-$str_dump =$str_dump.'</urlset>';echo $str_dump ;
-#put html content into $url file xml from folder 
+$str_finale = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL; 
 
-//$fp=file_put_contents("sitemap.xml",$str_dump);
+$str_f=$str_finale.PHP_EOL.$str_dump.PHP_EOL.'</urlset>';
+
+echo $str_f ;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 ?>
+
+
+
 
 
 
