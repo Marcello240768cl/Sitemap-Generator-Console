@@ -1,34 +1,7 @@
 <?php
 ini_set('memory_limit','-1');
-#Copyright (C) <2023>  <Piermarcello Piazza>
-#Funzione che restituisce i link della pagina dell' url di partenza sia https che http
-#input:url della pagina di partenza e generico $link delle ancore dei links
-# restituisce la mappa  di links del sito avente quell' url
 
-function getOriginalURL($url) {//funzione che restituisce il folder di redirect se c'è un redirect altrimenti mantiene invariato url di origine
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HEADER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    $result = @curl_exec($ch);
-    $httpStatus = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    // if it's not a redirection (3XX), move along
-    if ($httpStatus < 300 || $httpStatus >= 400)
-        return $url;
-
-    // look for a location: header to find the target URL
-    if(@preg_match('/location: (.*)/i', $result, $r)) {
-        $location = trim($r[1]);
-
-
-        return @$location;
-    }
-    
-}
-#Copyright (C) <2023>  <Piermarcello Piazza>
+#Copyright (C) <2025>  <Piermarcello Piazza>
 #Funzione che restituisce i link della pagina dell' url di partenza sia https che http
 #input:url della pagina di partenza e generico $link delle ancore dei links
 # restituisce l' array di links 
@@ -36,7 +9,8 @@ function get_links($link,$url)
     {
 global $start_url;
 $ret = array();
-     if((parse_url($link, PHP_URL_HOST))==(parse_url($start_url, PHP_URL_HOST))){
+$links=array();
+    if(parse_url($link, PHP_URL_HOST)==parse_url($start_url, PHP_URL_HOST)){
         $dom = new DOMDocument();
       //  $html=@file_get_contents($link);
 $ch = curl_init();
@@ -52,18 +26,66 @@ curl_close($ch);
         $dom->preserveWhiteSpace = false;
         $links = $dom->getElementsByTagName('a');
         foreach ($links as $tag){
- $ret[$tag->getAttribute('href')]=$tag->getAttribute('href');
-}
-         
-      }
+$schemeurl_=parse_url($url, PHP_URL_SCHEME);
+$hosturl_=parse_url($url, PHP_URL_HOST);
 
+//$ipurl_ = gethostbyname($hosturl_);
+$pathurl_=parse_url($url, PHP_URL_PATH);
+$queryurl_=parse_url($url, PHP_URL_QUERY);
+$scheme=parse_url($tag->getAttribute('href'), PHP_URL_SCHEME);
+$path=parse_url($tag->getAttribute('href'), PHP_URL_PATH);
+$host=parse_url($tag->getAttribute('href'), PHP_URL_HOST);
+$query=parse_url($tag->getAttribute('href'), PHP_URL_QUERY);
+if(($tag->getAttribute('href')=="#"))
+ $ret[$tag->getAttribute('href')]=$url;
+else if($host=="#")
+$ret[$tag->getAttribute('href')]=$scheme.'//'.$hosturl_;
+
+else if($path=="#")
+$ret[$tag->getAttribute('href')]=$scheme.'//'.$host.'/'.$pathurl_;
+
+else if($queryurl_=="#")
+$ret[$tag->getAttribute('href')]=$scheme.'//'.$host.'/'.'/'.$path.'/'.$queryurl_;
+
+ else if(!in_array($tag->getAttribute('href'),$ret)) $ret[$tag->getAttribute('href')]=$tag->getAttribute('href');
+}
+  $dom->loadHTML($html);
+
+// Clear the errors
+libxml_clear_errors();
+
+// Get the form element
+$form = $dom->getElementsByTagName('form')->item(0);
+
+// Check if the form element exists
+if ($form) {
+    // Get the action attribute
+    $action = $form->getAttribute('action');
+   // echo "Form action: " . $action . "\n";
+
+    // Get the method attribute
+   // $method = $form->getAttribute('method');
+  //  echo "Form method: " . $method . "\n";
+
+    // Get all input elements within the form
+    $inputs = $form->getElementsByTagName('action');
+    foreach ($inputs as $input) {
+        $type = $input->getAttribute('type');
+        $name = $input->getAttribute('name');
+        $value = $input->getAttribute('value');
+      //  echo "Input type: $type, name: $name, value: $value\n";
+$ret[$input->getAttribute('value')]=$input->getAttribute('value');
     }
 
-
+}       
+     
+}
+ 
+}
       return $ret;
        
-    }
-
+    
+}
 
 #Funzione che restituisce i link della pagina dell' url di partenza
 #input:url della pagina di partenza e generico $link delle ancore dei links
@@ -82,7 +104,6 @@ $get_url='';
 
 array_push($link,$url);
 $arr_link=$link;
-#Per ogni link dello stack array
    foreach($link as $url_)
 
   {
@@ -100,21 +121,18 @@ $queryurl_=parse_url($url_, PHP_URL_QUERY);
 
 
 
-#Se il generico link ha come host di riferimento lo stesso host dell' url di partenza
-if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$path.'?'.$queryurl_;
-# e se e' diverso da quelli gia' esaminati ,va sempre più  in profondita nello stack array altrimenti si ferma
+#Se il generico link ha come host di riferimento lo stesso host dell' url di partenza, va sempre più  in profondita altrimenti si ferma
+if(($hosturl_=='')&&($path!='')){$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).$path.'?'.$queryurl_;
 if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
 $arr_link=array_merge($arr_link,$link);
+
 }
 //else  get_urls_from($newurl);
 }
-#altrimenti se il link non ha un host uguale a quello dell' url di base(start_url)'
 else if(($hosturl_=='')&&($pathurl_!='') )
-{
-//aggiungiamo il nome host dell' url di base e reiteriamo come sopra'
-$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).'/'.$pathurl_.'?'.$queryurl_;
+{$newurl=$scheme.'://'.parse_url($url, PHP_URL_HOST).$pathurl_.'?'.$queryurl_;
 if(!in_array($newurl,$link)){
        array_push($link,$newurl);
 $link=get_links($newurl,$url);
@@ -127,11 +145,12 @@ $arr_link=array_merge($arr_link,$link);
 
 
 
-#Stessa operazione per tutti gli altri link dell
+
  if(!in_array($url_,$link)){
        array_push($link,$url_);
 $link=get_links($url_,$url);
 $arr_link=array_merge($arr_link,$link);
+
 }
 //else 
 // get_urls_from($url_);
@@ -165,7 +184,7 @@ if(((parse_url($fnew_url, PHP_URL_HOST)=="")||(parse_url($fnew_url, PHP_URL_HOST
 {
 #modify $fnew_url
 
-$new_url=parse_url($start_url, PHP_URL_SCHEME)."://".parse_url($start_url, PHP_URL_HOST)."/".parse_url($start_url, PHP_URL_PATH)."/".$fnew_url;
+$new_url=parse_url($start_url, PHP_URL_SCHEME)."://".parse_url($start_url, PHP_URL_HOST).parse_url($start_url, PHP_URL_PATH).$fnew_url;
 $new_Arr[$key] = $new_url;
 }
 
@@ -174,8 +193,26 @@ $new_Arr[$key] = $new_url;
     #delete it if the linkname of map is different from hostname.
     unset( $new_Arr[$key]);
 }
+$amp=Array();
+$nsbp=Array();
+foreach($new_Arr as $key=>$fnew_url){
+
+
+$string_n=$fnew_url;
+$amp=explode("&",$string_n);
+$amp_=implode("&amp;",$amp);
+
+//echo $amp_;
+$nsbp=explode(" ",$amp_);
+
+$nsbp_=implode("&nsbp;",$nsbp);
+//echo $nsbp_;
+$new_Arr[$key]=$nsbp_;
+}
 return $new_Arr;
 }
+
+# array $urls conte
 
 # array $urls contenente link  delle pagine
     $arr_links = array( );
@@ -208,7 +245,7 @@ $path=parse_url($start_url, PHP_URL_PATH);
 $host=parse_url($start_url, PHP_URL_HOST);
 $query=parse_url($start_url, PHP_URL_QUERY);
 $ip = gethostbyname($host);
-$urlp=getOriginalURL($_REQUEST['site_http_or_https']);
+$urlp=getOriginalURL($start_url);
 $newpath=parse_url($urlp, PHP_URL_PATH);
 $newstr= str_replace('index.php','',$newpath);
 
@@ -216,14 +253,14 @@ $start_url =$scheme.'://'.$host.'/'.$newstr;
 
 $arr_links=get_urls_from($start_url);
 $final_array=get_final_urls($arr_links);
-foreach($final_array as $key=>$f_url)
+/*foreach($final_array as $key=>$f_url)
 {
   if((parse_url($f_url, PHP_URL_PATH)=="#")||(parse_url($f_url, PHP_URL_QUERY)=="#"))
  #delete $fnew_url;
     #delete it if the linkname of map is different from hostname.
   unset( $final_array[$key]);
 
-}
+}*/
 //var_dump($arr_links);
 $str_finale="";$str_dump="";//Variable string of output of function  dump_url
 
@@ -236,19 +273,47 @@ $str_dump.=urlElement($link);
 
 
 
-$str_finale = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL; 
+$str_finale = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">'.PHP_EOL; 
 
-$str_f=$str_finale.PHP_EOL.$str_dump.PHP_EOL.'</urlset>';
+$str_f=$str_finale.PHP_EOL.$str_dump.PHP_EOL.'</urlset>';//echo $str_f;
+//$str_finale=$str_finale.'</urlset>';echo $str_dump ;
+#put html content into $url file xml from folder 
 
-echo $str_f ;
-
-
-
-
+//$fp=file_put_contents("sitemap.xml",$str_finale);
 
 
 
 
+
+
+
+
+
+
+
+
+$name_file=str_shuffle('0123456789');
+//echo "<h1>your sitemap file .xml:".$name_file.".xml"."</h1>";
+$fp=file_put_contents($name_file.".xml",$str_f );
+
+
+header('Content-Description: File Transfer');
+header('Content-Type: application/octet-stream');
+header("Content-Disposition: attachment; filename=".$name_file.".xml");
+header('Content-Transfer-Encoding: binary');
+header('Expires: 0');
+header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+header('Pragma: public');
+header('Content-Length: '. filesize($name_file.".xml")."'" ); //Absolute URL //
+ob_clean();
+flush();
+
+readfile($name_file.".xml"); //Absolute URL
+
+
+
+
+//exit();
 
 
 
@@ -259,6 +324,7 @@ echo $str_f ;
 
 
 ?>
+
 
 
 
