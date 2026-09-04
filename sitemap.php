@@ -6,42 +6,82 @@ ini_set('memory_limit','-1');
 #input:url della pagina di partenza e generico $link delle ancore dei links
 # restituisce l' array di links 
 
+function getOriginalURL2($url)
+{
+ 
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+$html = @curl_exec($ch);
+curl_close($ch);
+
+if($html!=''){
+
+  //  $html = file_get_contents($url);
+$dom = new DOMDocument();
+libxml_use_internal_errors(true);  // silence warnings
+$dom->loadHTML($html);
+$xpath = new DOMXPath($dom);
+$result = [];
+foreach ($xpath->query("//meta[(@name or @http-equiv) and @content]") as $node) {
+    $result[] = [
+        'attr' => $node->getAttribute($node->hasAttribute('name') ? 'name' : 'http-equiv'),
+        'content' => $node->getAttribute('content')
+    ];
+if($node->getAttribute($node->hasAttribute('name') ? 'name' : 'http-equiv')=="refresh"){
+$arr=array();
+$arr=explode("=", $node->getAttribute('content'));
+if($arr[1]!=$url) return $arr[1];
+else return 0;
+}
+}
+}
+}
 function getOriginalURL($url) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HEADER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    $result = @curl_exec($ch);
-    $httpStatus = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_HEADER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+$result = @curl_exec($ch);
 
-    // if it's not a redirection (3XX), move along
-    if ($httpStatus < 300 || $httpStatus >= 400)
-        return $url;
 
-    // look for a location: header to find the target URL
-    if(@preg_match('/location: (.*)/i', $result, $r)) {
-        $location = trim($r[1]);
 
-        // if the location is a relative URL, attempt to make it absolute
-        if (@preg_match('/^\/(.*)/', $location)) {
-            $urlParts = parse_url($url);
-            if ($urlParts['scheme'])
-                $baseURL = $urlParts['scheme'].'://';
+$httpStatus = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
 
-            if ($urlParts['host'])
-                $baseURL .= $urlParts['host'];
+// if it's not a redirection (3XX), move along
+if ($httpStatus < 300 || $httpStatus >= 400)
+    return $url;
 
-          /*  if ($urlParts['port'])
-                $baseURL .= ':'.$urlParts['port'];*/
+// look for a location: header to find the target URL
+if(@preg_match('/location: (.*)/i', $result, $r)) {
+    $location = trim($r[1]);
 
-            return @$baseURL.$location;
-        }
+    // if the location is a relative URL, attempt to make it absolute
+    if (@preg_match('/^\/(.*)/', $location)) {
+        $urlParts = parse_url($url);
+        if ($urlParts['scheme'])
+            $baseURL = $urlParts['scheme'].'://';
 
-        return @$location;
+        if ($urlParts['host'])
+            $baseURL .= $urlParts['host'];
+
+      /*  if ($urlParts['port'])
+            $baseURL .= ':'.$urlParts['port'];*/
+
+        return @$baseURL.$location;
     }
-    return @$url;
+
+    return @$location;
+}
+
+
+
+return @$url.'/'.$location;
+
 }
 #Restituisce i link di una pagina
 function get_links($link,$url)
@@ -239,7 +279,7 @@ $amp_=implode("&amp;",$amp);
 //echo $amp_;
 $nsbp=explode(" ",$amp_);
 
-$nsbp_=implode("&nsbp;",$nsbp);
+$nsbp_=implode("",$nsbp);
 //echo $nsbp_;
 $new_Arr[$key]=$nsbp_;
 }
@@ -267,7 +307,7 @@ return $aptr;
 
 
 # array $arr_links contenente link  delle pagine
-    $arr_links = array( );
+     $arr_links = array( );
    $final_array=array();
 
 
@@ -277,14 +317,30 @@ $start_url =$argv[1];
 $scheme=parse_url($start_url, PHP_URL_SCHEME);
 $path=parse_url($start_url, PHP_URL_PATH);
 $host=parse_url($start_url, PHP_URL_HOST);
-$query=parse_url($start_url, PHP_URL_QUERY);
+
+
+
 $ip = gethostbyname($host);
-$urlp=getOriginalURL($start_url);
+if(getOriginalURL($start_url)==$start_url)
+
+$urlp=$start_url;
+else if(getOriginalURL($start_url)!=$start_url)
+$urlp=@getOriginalURL($start_url);
+ if(getOriginalURL2($start_url))
+ $urlp=@getOriginalURL2($start_url);
+//else $urlp=$host.'/'.getOriginalURL2($start_url);
+
+$query=parse_url($urlp, PHP_URL_QUERY);
+
+//echo $urlp;
+$newhost=parse_url($urlp, PHP_URL_HOST);
+if($host!=$newhost) $host=$newhost;
 $newpath=parse_url($urlp, PHP_URL_PATH);
-$newstr= str_replace('index.php','',$newpath);
+$newquery=parse_url($urlp, PHP_URL_QUERY);
 
-$start_url =$scheme.'://'.$host.'/'.$newstr;
+//$newstr= str_replace('index.php','',$newpath);
 
+$start_url =$scheme.'://'.$host.'/'.$newpath.'/'.$newquery;
 $arr_links=get_urls_from($start_url);
 $final_array=get_final_urls($arr_links);
 /*foreach($final_array as $key=>$f_url)
@@ -309,15 +365,12 @@ $str_dump.=urlElement($link);
 
 $str_finale = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">'.PHP_EOL; 
 
-$str_f=$str_finale.PHP_EOL.$str_dump.PHP_EOL.'</urlset>';
-echo $str_f;
-
-
-
+$str_f=$str_finale.PHP_EOL.$str_dump.PHP_EOL.'</urlset>';echo $str_f;
 
 
 
 ?>
+
 
 
 
